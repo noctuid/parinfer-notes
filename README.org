@@ -1,11 +1,14 @@
-* About
+* Summary
 [[https://shaunlebron.github.io/parinfer/][Parinfer]]'s goal is to simplify how lisp is written and appeal to newcomers. It does this by using indentation-based inference to properly balance parentheses and allow for convenient functionality without requiring the use of any complicated keybindings. It currently has about as many stars on github as both [[https://github.com/abo-abo/lispy][lispy]] and [[https://github.com/Fuco1/smartparens][smartparens]] combined.
 
 I think parinfer is an interesting idea, and the fact that there are many implementations for various editors may make it a good starting point for those new to writing lisp (those who never try using emacs for writing lisp will probably miss out on a lot of functionality though).
 
-However, I think that its biggest flaw is also its core principle. With indentation-based inference, the location of parentheses is fragile and waiting to be unknowingly broken. This requires the user to manually re-indent or know when to change to parinfer's other mode of operation. Unless parinfer can somehow manage to automate this switching, I think that the cognitive load of having to know when parinfer's "indent mode" will break your code is not worth a potentially easier implementation (more on this later). Even if there is some way to mitigate this problem, I imagine that it would complicate the implementation sufficiently to prevent it from being any better than foregoing indentation-based inference altogether. Here I will show that all of parinfer's example functionality can be implemented without burdening the user in this way and while still sticking to the same simple keypresses.
+However, I think that its biggest flaw is also its core principle. With indentation-based inference, the location of parentheses is fragile and waiting to be unknowingly broken. This requires the user to manually re-indent or know when to change to parinfer's other mode of operation. Unless parinfer can somehow manage to automate this switching (see [[https://github.com/shaunlebron/parinfer/issues/86][issue 86]]), I think that the cognitive load of having to know when parinfer's "indent mode" will break your code actually complicates lisp editing, especially for a beginner.
 
-Examples here are currently done with multiple plugins. This is not ideal. It is just meant to be proof that all the benefits parinfer gives do not require having distinct "indent" and "paren" modes. As no indentation-based inference is used, examples will be done in what is closer to parinfer's "paren" mode.
+If parinfer can add a "hybrid mode" that reliably prevents this issue, then I think it would become a decent editing method for newcomers to lisp. That said, it still lacks the power of other lisp editing styles. Compare it to lispy which has all of parinfer's example functionality and more. Lispy also primarily uses unmodified letter keys for its functionality, but it provides more commands, and its commands are more versatile. Furthermore, since key behavior in parinfer based on inference, it is not necessarily intelligently chosen. For example, is barfing the closing paren to the point when pressing =)= really that useful? What about the behavior of =DEL= before a closing paren? On the other hand, lispy's keybindings were deliberately chosen and are more useful by default in my opinion.
+
+* Disclaimer About Emacs Demos
+The emacs demos shown here are outdated and done with multiple packages. All of the parinfer examples are now possible using lispy (see [[http://oremacs.com/lispy/parinfer_index.html][the documentation for the parinfer compat commands]]). I'll keep the demos as-is since they more closely (but not perfectly) mimic parinfer's useful behavior without any indentation-based inference.
 
 * Downsides of Parinfer
 Parinfer determines where parentheses should go based on the code's indentation. For the most part, it gets around requiring manual indentation by auto-indenting to the correct position when hitting enter. However, any time you change the indentation (or even line length in some cases!) after the initial auto-indentation happens, you will have to manually re-indent. If you don't want to manually re-indent everything yourself, you must switch to parinfer's "paren mode", make the change, and then switch back to "indent mode."
@@ -16,7 +19,9 @@ For example, if you wanted to bring a sexp up to the preceding line in "indent m
 
 [[moving a sexp up with the mouse][file:parinfer_demos/parinfer-downsides-2.gif]]
 
-In emacs, this would only require a single press of backspace. In the demo boxes, parinfer's "paren mode" still requires either spamming backspace or using the mouse. This could be changed to only require a single backspace, but it still would require two presses of some modifier keybinding (which parinfer claims it wants to avoid) to get in and out of "paren mode." Also, in "paren mode" you get none of the benefits you would normally have with something like paredit or smartparens. There is no auto-closing, for example, and parinfer's nice features won't work. It won't ensure that your parentheses are balanced either. These features could be added to "paren mode" to make it better, but the features "indent mode" gives can be implemented without the need for indentation-based inference in the first place.
+In emacs, this could be done with a single press of backspace. In the demo boxes, parinfer's "paren mode" still requires either spamming backspace or using the mouse. This could be changed to only require a single backspace, but it still would require two presses of some modifier keybinding (which parinfer claims it wants to avoid) to get in and out of "paren mode." The real problem here is that space and backspace change indentation. If indentation-based inference was not used, they could be made smarter.
+
+Also, in "paren mode" you get none of the benefits you would normally have with something like paredit or smartparens. There is no auto-closing, for example, and parinfer's nice features won't work. It won't ensure that your parentheses are balanced either. These features could be added to "paren mode" to make it better, but the features "indent mode" gives can be implemented without the need for indentation-based inference in the first place.
 
 Furthermore, parinfer will mess up your code in certain cases, even when you're not changing the indentation at the beginning of a line:
 
@@ -24,9 +29,9 @@ Furthermore, parinfer will mess up your code in certain cases, even when you're 
 
 Parinfer will also work incorrectly if you have unbalanced quotes in a comment.
 
-These limitations mean that you have to know exactly when parinfer will break your code or at least pay careful attention to catch when it does so that you can undo your changes and then redo them in "paren mode." Is this really something a beginner should be expected to cope with?
+These limitations mean that you have to know exactly when parinfer will break your code or at least pay careful attention to catch when it does so that you can undo your changes and then redo them in "paren mode." Is this really something a beginner should be expected to cope with? Once you're used to parinfer's modes, you're still wasting keypresses and effort every time you switch between them.
 
-With the normal way of editing (no indentation based inference), your code can always be correctly indented (see [[https://github.com/Malabarba/aggressive-indent-mode][aggressive-indent]]). Parentheses won't disappear and appear all the time and will never be moved to different spots unless you explicitly tell them to.
+With the normal way of editing (no indentation-based inference), your code can always be correctly indented (see [[https://github.com/Malabarba/aggressive-indent-mode][aggressive-indent]]). Parentheses won't disappear and appear all the time and will never be moved to different spots unless you explicitly tell them to. Instead of allowing all keys that change indentation to alter the parentheses, you dedicate just two keys to do this (tab and shift-tab; see =adjust-parens.el=).
 
 You can see [[https://shaunlebron.github.io/parinfer/#paren-mode][here]] for other examples of where parinfer's "indent mode" fails to have the desired behavior.
 
@@ -41,7 +46,7 @@ Inferring parentheses based on indentation seems to lead to simpler editing mech
 I think the biggest win is its potential to quell fear of managing end-of-line parens by enforcing a direct driving relationship with indentation.
 #+END_QUOTE
 
-I will show that all of this can be achieved without any of parinfer's methods and consequently without its downsides. As far as I am aware, there are no benefits that the parinfer method has for the user. However, to the implementer, parinfer may be simpler (I mention more about this in specific examples).
+All of this can be achieved without any of parinfer's methods and consequently without its downsides. As far as I am aware, there are no benefits that the parinfer method has for the user.
 
 * Gears
 Parinfer has some pretty [[https://shaunlebron.github.io/parinfer/#tools-for-writing-lisp][diagrams of gears]] representing the relationship between indentation and parentheses. It claims the following:
@@ -59,7 +64,7 @@ Parinfer is a new tool to combine and simplify this type of automation by natura
 
 As stated in the last section, I will give examples showing that either parentheses or indentation can be changed *without* the need to have two distinct modes. You can think of this as being able to spin either gear without having to switch contexts.
 
-* Parinfer Examples Done Without Need for Two Distinct Modes
+* Parinfer Examples Done Without Inference
 The demos I will be referring to can be found [[https://shaunlebron.github.io/parinfer/][here]].
 
 Note that for the first examples, parinfer does it in more keypresses than necessary by first moving the point to the beginning of the line. Parinfer will actually preserve the current scope when you hit enter normally. It also allows you to change scope by pressing =)= to move the point past a closing paren much like you would in emacs.
@@ -67,23 +72,22 @@ Note that for the first examples, parinfer does it in more keypresses than neces
 ** Rearrange Parens with Indentation
 [[rearrange parens][file:emacs_demos/rearrange-parens.gif]]
 
-This is done using the =adjust-parens= emacs plugin. This can also be done in reverse. Smartparens also has commands called ~sp-indent-adjust-sexp~ and ~sp-dedent-adjust-sexp~ that do the same thing.
+This is done using the =adjust-parens= emacs plugin. This can also be done in reverse. Smartparens also has commands called ~sp-indent-adjust-sexp~ and ~sp-dedent-adjust-sexp~ that do the same thing, and lispy now has ~lispy-indent-adjust-parens~ and ~lispy-dedent-adjust-parens~. The lispy implementation is the only one that works with a selection currently (which is why this old demo uses evil's visual column mode). Counts are also supported.
 
-*** Notes on Differences
-Neither emacs package supports the selection part by default, so I used evil's visual column mode to show that it is possible to indent and adjust parens for multiple sexps at once. This is why you see the delay between the first =[]= block being indented and the second =[]= block being indented to the same level. I imagine that this would also work with multiple cursors. Ideally, this would be done in one step.
-
-Also, unlike with parinfer, this method requires the use of tab and shift+tab to change indentation. I don't see this as a problem since spamming space is more keypresses anyway.
+Generally these commands are bound to tab and shift-tab. Unlike with parinfer, the parentheses are only adjusted when you explicitly choose to adjust them using these commands. Also note that tab will still indent a line correctly as it normally does if the indentation is incorrect.
 
 ** Insert or Delete a Line Without Rearranging Parens
 [[insert a line or delete a region][file:emacs_demos/adding-and-deleting-lines-region.gif]]
 
-The above example shows that a selected region can be deleted without unbalancing parentheses just like in parinfer (without the need for "special hotkeys"). This can be done with [[https://github.com/abo-abo/lispy][lispy]], =evil-cleverparens=, etc.
+The above example shows that a selected region can be deleted without unbalancing parentheses just like in parinfer (without the need for "special hotkeys"). This can be done with [[https://github.com/abo-abo/lispy][lispy]], [[https://github.com/noctuid/lispyville][lispyville]], [[https://github.com/luxbock/evil-cleverparens][evil-cleverparens]], etc.
 
 [[insert or delete a line with evil][file:emacs_demos/adding-and-deleting-lines-evil.gif]]
 
-This second example is done using the [[https://github.com/luxbock/evil-cleverparens][evil-cleverparens]] plugin which allows evil's deleting and changing commands to maintain paren balance (=evil-smartparens= can also be used).
+This second example is done using the [[https://github.com/luxbock/evil-cleverparens][evil-cleverparens]] plugin which allows evil's deleting and changing commands to maintain paren balance (=evil-smartparens= or =lispyville= can also be used).
 
 The downside to this approach is that all commands for deleting text must be wrapped to be safe. However, there is no burden on the user (only on the implementer), and all common commands for deletion already have safe versions in emacs (with multiple implementations in the case of evil commands).
+
+That said, safe deletion, copying, and even pasting are all fairly simple to implement. I've created some functions that allow for these operations in lispy (see ~lispy--find-unmatched-delimiters~ for the basis for all of them).
 
 ** Comment a Line Without Rearranging Parens
 [[comment a line][file:emacs_demos/comment-line.gif]]
@@ -93,18 +97,13 @@ This uses ~lispy-comment~ which has the same effect except that it only requires
 ** Basic Paredit Without Hotkeys
 [[basic paredit without hotkeys][file:emacs_demos/basic-paredit-without-hotkeys.gif]]
 
-In this example, I have bound =DEL= (backspace) to splice before an open paren or to slurp as far as possible before a close paren, =(= to a command that wraps to the end of the line, and =)= to a command that barfs to the point. 
+In this example, I have bound =DEL= (backspace) to splice before an open paren or to slurp as far as possible before a close paren, =(= to a command that wraps to the end of the line, and =)= to a command that barfs to the point.
 
-There is nothing about this that requires inference; it is just different keybindings. I also think that the lispy defaults make more sense for =DEL= (deletes the sexp) and =)= (jumps to closing block). The fact that =DEL= slurps when you delete a closing paren in parinfer makes sense knowing how parinfer works, but otherwise it seems very counter-intuitive.
+There is nothing about this that requires inference. The behavior is not exactly the same since parinfer could wrap further depending on the indentation, but consider that with lispy (see [[http://oremacs.com/lispy/parinfer_index.html][the relevant documentation]]) the behavior is always clearly defined. You can wrap an exact number of sexps or as far as possible.
 
-I tried to replicate the parinfer demo by keeping the point after the =+= for the final slurp. I also don't think this is optimal and think it would make more sense to stay with the point after the =)= like how you would normally when slurping in lispy.
+I also think that the lispy defaults are more useful for =DEL= (deletes the entire sexp) and =)= (jumps to closing paren). The fact that =DEL= slurps when you delete a closing paren in parinfer makes sense knowing how parinfer works but otherwise seems strange.
 
-See [[https://github.com/abo-abo/lispy][lispy]] for /advanced/ paredit functionality without the need for using complicated keybindings.
-
-*** Notes on Differences
-When splicing the =(= before the let, I used an undo operation to get back the surrounding parentheses. The reason the parinfer case slurps as far as possible instead of to the end of the line is because parinfer doesn't automatically update indentation, so it can still infer the same paren placement as before. However, I don't consider this to be an upside of the inference method because I don't see any situation in which it would be useful. For example, your indentation will cause parinfer to wrap to a single location, and if you wanted to wrap to a different location, you would have to manually change the indentation first. An implementation of this in lispy could allow one to easily choose between wrapping to the end of line or as far as possible and still use simple keys (without requiring any indentation changes).
-
-It's also probably worth noting that after this splice, the expression is even more incorrect than it was before, so an undo operation probably makes more sense anyway.
+As a final note, lispy provides full paredit functionality using mostly unmodified letter keys.
 
 ** Preserve indentation
 See the [[https://github.com/Malabarba/aggressive-indent-mode#demonstration][demos for aggressive-indent]].
@@ -117,4 +116,4 @@ Regardless of how we choose to edit our Lisp code, there seems to always be a ba
 Building the interactive examples for this page has allowed me to explore how well Parinfer can play this balancing act, but only in a demo environment. The real test will come once it becomes available to major editors. See editor plugins for progress.
 #+END_QUOTE
 
-I disagree with the conclusion reached. A hypothetical plugin that implemented all of my examples here would have all the benefits listed for parinfer without any of the downsides. The closest thing to this at the moment is [[https://github.com/abo-abo/lispy][lispy]], which also allows for far more advanced editing.
+I disagree with the conclusion reached. Lispy, as an example, still requires simple keypresses but allows for more powerful functionality. To me it seems that indentation-based inference adds needless complexity without providing any unique functionality.
